@@ -26,7 +26,7 @@ public class AuthController : BaseApiController
     [Route("api/logout")]
     public async Task<IActionResult> logout()
     {
-        var logoutResponse = "It has not been implemented";
+        var logoutResponse = "It has not been iml";
         return Ok(logoutResponse);
     }
 }
