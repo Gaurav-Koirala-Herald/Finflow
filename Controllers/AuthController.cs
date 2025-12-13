@@ -1,21 +1,30 @@
 using System;
+using FinflowAPI.RequestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
+[Route("api")]
 [ApiController]
-public class AuthController : BaseApiController
+public class AuthController(IJwtTokenGenerator jwtTokenGenerator) : BaseApiController
 {
     [AllowAnonymous]
-    [Route("api/login")]
-    public async Task<IActionResult> login()
+    [Route("login")]
+    [HttpPost]
+    public async Task<IActionResult> login(LoginRequest loginRequest)
     {
-        var loginResponse = "To be implemented";
-        return Ok(loginResponse);
+        if (loginRequest.userName == "gaurav" && loginRequest.password == "pwd")
+        {
+            var resposnse = jwtTokenGenerator.GenerateAccessToken(loginRequest);
+            ;
+            return Ok(resposnse);
+        }
+        return Unauthorized();
     }
 
     [Authorize]
-    [Route("api/refresh")]
+    [HttpPut]
+    [Route("refresh")]
     public async Task<IActionResult> refersh()
     {
         var refreshToken = "the refresh token has been invoked";
@@ -23,7 +32,8 @@ public class AuthController : BaseApiController
     }
 
     [Authorize]
-    [Route("api/logout")]
+    [HttpDelete]
+    [Route("logout")]
     public async Task<IActionResult> logout()
     {
         var logoutResponse = "It has not been iml";
