@@ -1,0 +1,69 @@
+# =========================
+# JetBrains Rider
+# =========================
+.idea/
+*.sln.iml
+
+#appsettings.json
+
+appsettings.json
+appsettings.Development.json
+
+
+# Rider user-specific files
+*.user
+*.rsuser
+*.DotSettings.user
+
+# =========================
+# Build results
+# =========================
+bin/
+obj/
+out/
+
+# =========================
+# .NET Core / ASP.NET
+# =========================
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# NuGet
+# =========================
+packages/
+*.nupkg
+.nuget/
+.nuget/packages/
+
+# =========================
+# Test results
+# =========================
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+
