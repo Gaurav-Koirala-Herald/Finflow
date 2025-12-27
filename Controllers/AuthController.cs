@@ -1,42 +1,123 @@
-using System;
+using System.Security.Claims;
+using Microsoft.AspNetCore. Authorization;
+using Microsoft. AspNetCore. Mvc;
+using FinflowAPI. Models;
+using FinflowAPI.Models.RequestModels;
+using FinflowAPI.Models.RequestModels.UserManagement;
 using FinflowAPI.RequestModels;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+using FinflowAPI.Services.Auth;
+using FinflowAPI. Services.Auth;
 
-[Route("api")]
+namespace FinflowAPI.Controllers;
+
 [ApiController]
-public class AuthController(IJwtTokenGenerator jwtTokenGenerator) : BaseApiController
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
 {
-    [AllowAnonymous]
-    [Route("login")]
-    [HttpPost]
-    public async Task<IActionResult> login(LoginRequest loginRequest)
+    private readonly IAuthService _authService;
+
+    public AuthController(IAuthService authService)
     {
-        if (loginRequest.userName == "gaurav" && loginRequest.password == "pwd")
+        _authService = authService;
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
+    {
+        if (!ModelState.IsValid)
         {
-            var resposnse = jwtTokenGenerator.GenerateAccessToken(loginRequest);
-            ;
-            return Ok(resposnse);
+            return BadRequest(ApiResponse<object>. FailureResponse(
+                "Validation failed",
+                ModelState. Values.SelectMany(v => v.Errors. Select(e => e.ErrorMessage)).ToList()));
         }
-        return Unauthorized();
+
+        var result = await _authService.RegisterAsync(request);
+
+        if (! result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return CreatedAtAction(nameof(Register), result);
     }
 
-    [Authorize]
-    [HttpPut]
-    [Route("refresh")]
-    public async Task<IActionResult> refersh()
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var refreshToken = "the refresh token has been invoked";
-        return Ok();
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<object>. FailureResponse(
+                "Validation failed",
+                ModelState.Values.SelectMany(v => v. Errors.Select(e => e.ErrorMessage)).ToList()));
+        }
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?. ToString();
+        var deviceInfo = Request.Headers["User-Agent"].ToString();
+
+        var result = await _authService.LoginAsync(request, ipAddress, deviceInfo);
+
+        if (!result.Success)
+        {
+            return Unauthorized(result);
+        }
+
+        return Ok(result);
     }
 
-    [Authorize]
-    [HttpDelete]
-    [Route("logout")]
-    public async Task<IActionResult> logout()
+    // [HttpPost("refresh-token")]
+    // public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    // {
+    //     if (!ModelState. IsValid)
+    //     {
+    //         return BadRequest(ApiResponse<object>.FailureResponse("Invalid request"));
+    //     }
+    //
+    //     var result = await _authService.RefreshTokenAsync(request);
+    //
+    //     if (!result.Success)
+    //     {
+    //         return Unauthorized(result);
+    //     }
+    //
+    //     return Ok(result);
+    // }
+
+    // [Authorize]
+    // [HttpPost("logout")]
+    // public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    // {
+    //     var userId = GetCurrentUserId();
+    //     if (userId == null)
+    //     {
+    //         return Unauthorized(ApiResponse<object>.FailureResponse("Invalid user"));
+    //     }
+    //
+    //     var result = await _authService.LogoutAsync(userId.Value, request.RefreshToken);
+    //     return Ok(result);
+    // }
+
+    // [Authorize]
+    // [HttpPost("revoke-all-tokens")]
+    // public async Task<IActionResult> RevokeAllTokens()
+    // {
+    //     var userId = GetCurrentUserId();
+    //     if (userId == null)
+    //     {
+    //         return Unauthorized(ApiResponse<object>. FailureResponse("Invalid user"));
+    //     }
+    //
+    //     var result = await _authService.RevokeAllTokensAsync(userId.Value);
+    //     return Ok(result);
+    // }
+
+    private int?  GetCurrentUserId()
     {
-        var logoutResponse = "It has not been iml";
-        return Ok(logoutResponse);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out int userId) ? userId : null;
     }
+}
+
+public class LogoutRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
 }

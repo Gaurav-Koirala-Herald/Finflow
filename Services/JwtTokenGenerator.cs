@@ -14,7 +14,6 @@ public interface IJwtTokenGenerator
     ClaimsPrincipal GetPrincipalFromToken(string token);
 }
 
-// Services/JwtTokenGenerator.cs
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
     private readonly JwtSettings _jwtSettings;

@@ -1,53 +1,29 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft. AspNetCore.Authentication.JwtBearer;
+using Microsoft. EntityFrameworkCore;
+using Microsoft. IdentityModel. Tokens;
+using Microsoft.OpenApi.Models;
+using FinflowAPI.Data;
+using FinflowAPI.DbImplementation;
+using FinflowAPI.DbImplementation.Interfaces;
+using FinflowAPI.Models;
+using FinflowAPI.Services;
+using FinflowAPI.Services.Auth;
+using FinflowAPI.Services. Implementations;
+using FinflowAPI.Services.Transaction;
+using FinflowAPI.Services.UserManagement;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-
-// Configure Swagger with JWT support
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "JWT Authentication API", Version = "v1" });
-    
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
+// Add DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options. UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure JWT Settings
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-builder.Services.Configure<JwtSettings>(jwtSettings);
+builder.Services. Configure<JwtSettings>(builder.Configuration. GetSection("JwtSettings"));
 
-var jwtSettingsValue = jwtSettings.Get<JwtSettings>();
-var key = Encoding.UTF8.GetBytes(jwtSettingsValue.jwtSecret);
-
-// Configure Authentication
+// Add JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -61,37 +37,65 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettingsValue.issuer,
-        ValidAudience = jwtSettingsValue.audience,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero // Remove default 5 minute clock skew
-    };
-    
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-            {
-                context.Response.Headers.Add("Token-Expired", "true");
-            }
-            return Task.CompletedTask;
-        }
+        ValidIssuer = jwtSettings!.issuer,
+        ValidAudience = jwtSettings. audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.jwtSecret)),
+        ClockSkew = TimeSpan.Zero
     };
 });
 
 builder.Services.AddAuthorization();
 
-// OPTION 1: Register services for Entity Framework implementation
 
-// OPTION 2: Register services for ADO.NET implementation (comment out EF registrations above)
-// builder.Services.AddScoped<IUserRepository, UserRepository>();
-// builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+// Register Services
+builder.Services.AddScoped<JwtTokenGenerator>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+// builder.Services. AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
-// Register common services
-builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+// Add Controllers
+builder.Services. AddControllers();
 
-// Configure CORS
+// Add Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Finflow API",
+        Version = "v1",
+        Description = "Finance Tracker API"
+    });
+
+    // Add JWT Authentication to Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType. Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -102,29 +106,29 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add logging
-builder.Services.AddLogging(logging =>
-{
-    logging.AddConsole();
-    logging.AddDebug();
-});
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Configure Pipeline
+if (app. Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
+app. UseHttpsRedirection();
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
+// Apply migrations and seed data on startup
+using (var scope = app.Services.CreateScope())
+{
+    // var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    // dbContext.Database.Migrate();
+    
+    // Seed admin user
+    // await DbSeeder.SeedAdminUserAsync(dbContext);
+}
 
 app.Run();
