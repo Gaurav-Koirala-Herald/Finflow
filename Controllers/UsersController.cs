@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using RoleBaseAuthorization.Attributes;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Services.User;
-using UMS. API.Services;
+using FinFlowAPI.Attributes;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Services.User;
 
-namespace UMS.API.Controllers
+namespace FinFlowAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

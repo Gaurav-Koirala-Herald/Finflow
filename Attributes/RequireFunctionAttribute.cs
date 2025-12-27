@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace RoleBaseAuthorization.Attributes
+namespace FinFlowAPI.Attributes
 {
     public class RequireFunctionAttribute : AuthorizeAttribute
     {

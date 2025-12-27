@@ -1,11 +1,11 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
-using RoleBaseAuthorization.Services;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
+using FinFlowAPI.Services;
 
-namespace RoleBaseAuthorization.Controllers;
+namespace FinFlowAPI.Controllers;
 
 [Authorize]
 [ApiController]

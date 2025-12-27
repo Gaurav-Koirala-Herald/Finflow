@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Services.Transactions;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Services.Transactions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace RoleBaseAuthorization.Controllers;
+namespace FinFlowAPI.Controllers;
 
 [Authorize]
 [Route("api/transactions")]

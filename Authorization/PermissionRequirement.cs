@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
-namespace RoleBaseAuthorization.Authorization
+namespace FinFlowAPI.Authorization
 {
     public class PermissionRequirement : IAuthorizationRequirement
     {

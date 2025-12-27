@@ -1,6 +1,6 @@
 ﻿using System. ComponentModel.DataAnnotations;
 
-namespace RoleBaseAuthorization.Models
+namespace FinFlowAPI.Models
 {
     public class RolePrivilege
     {

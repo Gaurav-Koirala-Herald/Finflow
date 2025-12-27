@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using RoleBaseAuthorization;
-using RoleBaseAuthorization.Attributes;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
-using RoleBaseAuthorization.Services.Role;
+using FinFlowAPI;
+using FinFlowAPI.Attributes;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
+using FinFlowAPI.Services.Role;
 
-namespace RoleBaseAuthorization.Controllers
+namespace FinFlowAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

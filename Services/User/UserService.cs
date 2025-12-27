@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
-using RoleBaseAuthorization.Services.User;
+using FinFlowAPI.Data;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
 
-namespace UMS.API.Services
+
+namespace FinFlowAPI.Services.User
 {
     public class UserService : IUserService
     {
@@ -70,11 +70,11 @@ namespace UMS.API.Services
             if (await _context.Users.AnyAsync(u => u.Username == dto.Username || u. Email == dto.Email))
                 return null;
 
-            var user = new User
+            var user = new Models.User
             {
                 Username = dto.Username,
                 Email = dto. Email,
-                PasswordHash = dto.Password,
+                // PasswordHash = dto.Password,
                 FullName = dto.FullName,
                 IsActive = true,
                 CreatedAt = DateTime. UtcNow

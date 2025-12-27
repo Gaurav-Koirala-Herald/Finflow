@@ -3,11 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
+using FinFlowAPI.Data;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
 
-namespace RoleBaseAuthorization.Services.Auth
+namespace FinFlowAPI.Services.Auth
 {
     public class AuthService : IAuthService
     {

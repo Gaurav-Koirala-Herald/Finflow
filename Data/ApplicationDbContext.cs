@@ -1,7 +1,7 @@
 ﻿using Microsoft. EntityFrameworkCore;
-using RoleBaseAuthorization.Models;
+using FinFlowAPI.Models;
 
-namespace RoleBaseAuthorization.Data
+namespace FinFlowAPI.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -20,6 +20,9 @@ namespace RoleBaseAuthorization.Data
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionCategory> TransactionCategories { get; set; }
         public DbSet<TransactionType> TransactionTypes { get; set; }
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Comment> Comments { get;set; }
+        public DbSet<PostInteraction> PostInteractions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,7 +43,9 @@ namespace RoleBaseAuthorization.Data
                 entity.Property(u => u.PasswordHash).IsRequired();
                 entity.Property(u => u. FullName).HasMaxLength(100);
             });
-
+            modelBuilder.Entity<PostInteraction>()
+                .HasIndex(pi => new { pi.PostId, pi.UserId, pi.Type })
+                .IsUnique(); // 1 like per user per post
             // ============================================
             // ROLE CONFIGURATION
             // ============================================

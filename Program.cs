@@ -4,15 +4,14 @@ using Microsoft.AspNetCore. Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft. IdentityModel. Tokens;
 using Microsoft.OpenApi.Models;
-using RoleBaseAuthorization.API.Services;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.Middleware;
-using RoleBaseAuthorization.Services;
-using RoleBaseAuthorization.Services.Auth;
-using RoleBaseAuthorization.Services.Role;
-using RoleBaseAuthorization.Services.Transactions;
-using RoleBaseAuthorization.Services.User;
-using UMS.API.Services;
+using FinFlowAPI.API.Services;
+using FinFlowAPI.Data;
+using FinFlowAPI.Middleware;
+using FinFlowAPI.Services;
+using FinFlowAPI.Services.Auth;
+using FinFlowAPI.Services.Role;
+using FinFlowAPI.Services.Transactions;
+using FinFlowAPI.Services.User;
 
 var builder = WebApplication.CreateBuilder(args);
 

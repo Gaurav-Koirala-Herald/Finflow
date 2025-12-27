@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.Models;
+using FinFlowAPI.Data;
+using FinFlowAPI.Models;
 
-namespace RoleBaseAuthorization.Services;
+namespace FinFlowAPI.Services;
 
 public class CommonService(ApplicationDbContext dbContext)
 {

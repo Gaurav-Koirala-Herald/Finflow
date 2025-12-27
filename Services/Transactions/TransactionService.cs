@@ -1,10 +1,10 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
+using FinFlowAPI.Data;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
 
-namespace RoleBaseAuthorization.Services.Transactions;
+namespace FinFlowAPI.Services.Transactions;
 
 public class TransactionService(ApplicationDbContext dbContext) : ITransactionService
 {
@@ -27,6 +27,16 @@ public class TransactionService(ApplicationDbContext dbContext) : ITransactionSe
         var existingTransactions = await dbContext.Transactions.FirstOrDefaultAsync(x => x.Id == dto.Id);
         
         if(existingTransactions == null) return (false);
+        existingTransactions.Amount = dto.Amount;
+        existingTransactions.Description = dto.Description;
+        existingTransactions.TransactionDate = dto.TransactionDate;
+        existingTransactions.transactionTypeId= dto.transactionTypeId;
+        existingTransactions.userId = dto.userId;
+        existingTransactions.TransactionDate = dto.TransactionDate;
+        existingTransactions.categoryId = dto.categoryId;
+        existingTransactions.Name = dto.Name;
+        
+        dbContext.Transactions.Update(existingTransactions);
         return await dbContext.SaveChangesAsync() > 0;
     }
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace RoleBaseAuthorization.Controllers;
+namespace FinFlowAPI.Controllers;
 
 [ApiController]
 [Authorize]

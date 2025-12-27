@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RoleBaseAuthorization.DTO
+namespace FinFlowAPI.DTO
 {
     public class LoginRequestDto
     {

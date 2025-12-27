@@ -1,4 +1,4 @@
-﻿using RoleBaseAuthorization.Models;
+﻿using FinFlowAPI.Models;
 
 public class TransactionCategory
 {

@@ -1,6 +1,6 @@
-﻿using RoleBaseAuthorization.DTO;
+﻿using FinFlowAPI.DTO;
 
-namespace RoleBaseAuthorization.Services.Role
+namespace FinFlowAPI.Services.Role
 {
     public interface IRoleService
     {

@@ -2,12 +2,12 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using RoleBaseAuthorization.Data;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Models;
-using RoleBaseAuthorization.Services.Role;
+using FinFlowAPI.Data;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Models;
+using FinFlowAPI.Services.Role;
 
-namespace RoleBaseAuthorization. API.Services
+namespace FinFlowAPI. API.Services
 {
     public class RoleService : IRoleService
     {

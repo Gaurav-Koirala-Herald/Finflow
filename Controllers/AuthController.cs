@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft. AspNetCore. Mvc;
 using System.Security.Claims;
-using RoleBaseAuthorization.DTO;
-using RoleBaseAuthorization.Services.Auth;
+using FinFlowAPI.DTO;
+using FinFlowAPI.Services.Auth;
 
-namespace UMS.API.Controllers
+namespace FinFlowAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -19,7 +19,7 @@ namespace UMS.API.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        public async Task<IActionResult> Login(LoginRequestDto request)
         {
             var result = await _authService.LoginAsync(request);
             if (result == null)

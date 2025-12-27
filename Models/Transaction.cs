@@ -1,4 +1,4 @@
-﻿namespace RoleBaseAuthorization.Models;
+﻿namespace FinFlowAPI.Models;
 
 public class Transaction
 {

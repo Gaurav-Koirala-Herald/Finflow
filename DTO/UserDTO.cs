@@ -1,4 +1,4 @@
-﻿namespace RoleBaseAuthorization.DTO
+﻿namespace FinFlowAPI.DTO
 {
     public class UserDto
     {

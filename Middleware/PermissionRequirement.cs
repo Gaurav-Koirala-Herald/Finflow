@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace RoleBaseAuthorization.Middleware
+namespace FinFlowAPI.Middleware
 {
     public class FunctionRequirement : IAuthorizationRequirement
     {
