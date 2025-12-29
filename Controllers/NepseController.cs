@@ -12,14 +12,14 @@ public class NepseController : ControllerBase
     public async Task<IActionResult> GetTopLosers()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("https://nepseapi.surajrimal.dev/TopLosers");
+        var response = await client.GetStringAsync("https://nepse-api-eight.vercel.app/top-losers");
         return Content(response,"application/json");
     }
     [HttpGet("NepseIndex")]
     public async Task<IActionResult> GetNepseIndex()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("https://nepseapi.surajrimal.dev/NepseIndex");
+        var response = await client.GetStringAsync("https://nepse-api-eight.vercel.app/nepse-index");
         return Content(response,"application/json");
 
     }
@@ -27,7 +27,7 @@ public class NepseController : ControllerBase
     public async Task<IActionResult> GetTopGainers()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("https://nepseapi.surajrimal.dev/TopGainers");
+        var response = await client.GetStringAsync("https://nepse-api-eight.vercel.app/top-gainers");
         return Content(response,"application/json");
 
     }
@@ -35,7 +35,7 @@ public class NepseController : ControllerBase
     public async Task<IActionResult> IsNepseOpen()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("https://nepseapi.surajrimal.dev/IsNepseOpen");
+        var response = await client.GetStringAsync("https://nepse-api-eight.vercel.app/is-nepse-open");
         return Content(response,"application/json");
 
     }

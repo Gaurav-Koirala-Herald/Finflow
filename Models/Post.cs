@@ -5,7 +5,7 @@ public class Post
     public int Id { get; set; }
     public string Title { get; set; } = "";
     public string Content { get; set; } = "";
-    public string AuthorId { get; set; } = ""; // your user id
+    public string UserId { get; set; } 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     

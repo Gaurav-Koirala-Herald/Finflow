@@ -9,6 +9,9 @@ using FinFlowAPI.Data;
 using FinFlowAPI.Middleware;
 using FinFlowAPI.Services;
 using FinFlowAPI.Services.Auth;
+using FinFlowAPI.Services.Comments;
+using FinFlowAPI.Services.Interactions;
+using FinFlowAPI.Services.Posts;
 using FinFlowAPI.Services.Role;
 using FinFlowAPI.Services.Transactions;
 using FinFlowAPI.Services.User;
@@ -49,10 +52,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services. AddScoped<IRoleService, RoleService>();
 builder. Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IPostsService, PostsService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IInteractionService, InteractionService>();
 builder.Services.AddScoped<CommonService>();
 builder.Services.AddHttpClient("NepseApi", client =>
     {
-        client.BaseAddress = new Uri("https://nepseapi.surajrimal.dev/api/");
+        client.BaseAddress = new Uri("https://nepseapi.surajrimal.dev/");
         client.Timeout = TimeSpan.FromSeconds(30);
     })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
