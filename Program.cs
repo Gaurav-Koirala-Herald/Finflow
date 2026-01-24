@@ -1,4 +1,5 @@
 using System. Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore. Authentication.JwtBearer;
 using Microsoft.AspNetCore. Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,17 @@ using FinFlowAPI.Services.Posts;
 using FinFlowAPI.Services.Role;
 using FinFlowAPI.Services.Transactions;
 using FinFlowAPI.Services.User;
+using FinFlowAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services. AddControllers();
+builder.Services. AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
 builder. Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -54,7 +62,11 @@ builder. Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IAccountsService,AccountService>();
 builder.Services.AddScoped<IInteractionService, InteractionService>();
+builder.Services.AddScoped<IGoalService, GoalService>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<DataExportService>();
 builder.Services.AddScoped<CommonService>();
 builder.Services.AddHttpClient("NepseApi", client =>
     {
@@ -69,7 +81,7 @@ builder.Services.AddHttpClient("NepseApi", client =>
 // Authorization handlers
 builder. Services.AddScoped<IAuthorizationHandler, FunctionHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, PrivilegeHandler>();
-
+builder.Services.AddSingleton<SqlHandlerService>();
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -144,6 +156,7 @@ if (app.Environment. IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

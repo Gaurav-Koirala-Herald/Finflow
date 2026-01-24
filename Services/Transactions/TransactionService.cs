@@ -10,7 +10,7 @@ public class TransactionService(ApplicationDbContext dbContext) : ITransactionSe
 {
     public async Task<List<TransactionDto>> GetAllTransactionAsync(int userId)
     {
-        var transactions =await  dbContext.Transactions.Where(x => x.userId == userId).ToListAsync();
+        var transactions =await  dbContext.Transactions.Where(x => x.userId == userId && x.IsActive).ToListAsync();
         var mappedResponse = transactions.Adapt<List<TransactionDto>>();
         return mappedResponse;
     }
@@ -18,6 +18,7 @@ public class TransactionService(ApplicationDbContext dbContext) : ITransactionSe
     public async Task<bool> CreateTransactionAsync(TransactionDto dto)
     {
         var mappedRequest = dto.Adapt<Transaction>();
+        mappedRequest.IsActive = true;
         await dbContext.Transactions.AddAsync(mappedRequest);
         return await dbContext.SaveChangesAsync() > 0;
     }
@@ -27,11 +28,13 @@ public class TransactionService(ApplicationDbContext dbContext) : ITransactionSe
         var existingTransactions = await dbContext.Transactions.FirstOrDefaultAsync(x => x.Id == dto.Id);
         
         if(existingTransactions == null) return (false);
+        existingTransactions.userId = dto.userId;
         existingTransactions.Amount = dto.Amount;
         existingTransactions.Description = dto.Description;
         existingTransactions.TransactionDate = dto.TransactionDate;
         existingTransactions.transactionTypeId= dto.transactionTypeId;
         existingTransactions.userId = dto.userId;
+        existingTransactions.IsActive = true;
         existingTransactions.TransactionDate = dto.TransactionDate;
         existingTransactions.categoryId = dto.categoryId;
         existingTransactions.Name = dto.Name;

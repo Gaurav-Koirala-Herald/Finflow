@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Models;
 
 namespace FinFlowAPI.Models;
 
@@ -27,7 +28,7 @@ public class User
         
     public DateTime?  UpdatedAt { get; set; }
         
-    // Navigation properties
+    public List<Goal> Goals { get; set; } = new();
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

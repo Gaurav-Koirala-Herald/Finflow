@@ -27,4 +27,10 @@ public class CommonController(CommonService commonService) : ControllerBase
         var mappedResponse = result.Adapt<List<TransactionCategoryDTO>>();
         return mappedResponse;
     }
+    [HttpGet("account-types")]
+    public async Task<List<AccountType>> GetAccountTypesAsync()
+    {
+        var result = await commonService.GetAccountTypesAsync();
+        return result;
+    }
 }
