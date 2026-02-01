@@ -12,7 +12,7 @@ namespace FinFlowAPI.Middlewares
         private static readonly ConcurrentDictionary<string, RateLimitInfo> _requests
             = new ConcurrentDictionary<string, RateLimitInfo>();
 
-        private const int LIMIT = 50;         
+        private const int LIMIT = 5000;         
         private static readonly TimeSpan WINDOW = TimeSpan.FromMinutes(1);
 
         public RateLimitingMiddleware(RequestDelegate next)
@@ -43,7 +43,6 @@ namespace FinFlowAPI.Middlewares
             {
                 if (now - rateLimitInfo.FirstRequestTime > WINDOW)
                 {
-                    // Reset window
                     rateLimitInfo.FirstRequestTime = now;
                     rateLimitInfo.RequestCount = 1;
                 }

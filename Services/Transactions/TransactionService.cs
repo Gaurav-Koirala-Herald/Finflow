@@ -10,9 +10,19 @@ public class TransactionService(ApplicationDbContext dbContext) : ITransactionSe
 {
     public async Task<List<TransactionDto>> GetAllTransactionAsync(int userId)
     {
-        var transactions =await  dbContext.Transactions.Where(x => x.userId == userId && x.IsActive).ToListAsync();
-        var mappedResponse = transactions.Adapt<List<TransactionDto>>();
-        return mappedResponse;
+        var transactions =await  dbContext.Transactions.Where(x => x.userId == userId && x.IsActive)
+        .Select(x=> new TransactionDto
+        {
+        Id = x.Id,
+        Name = x.Name,
+        Description = x.Description,
+        categoryId = x.categoryId,
+        transactionTypeId = x.transactionTypeId,
+        Amount = x.Amount,
+        TransactionDate = x.TransactionDate.Date, 
+        userId = x.userId
+        }).ToListAsync();
+        return transactions;
     }
 
     public async Task<bool> CreateTransactionAsync(TransactionDto dto)

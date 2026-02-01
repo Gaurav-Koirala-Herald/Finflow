@@ -18,7 +18,8 @@ public class CommentService : ICommentService
         var mappedRequest = dto.Adapt<Comment>();
         await _context.Comments.AddAsync(mappedRequest);
         await _context.SaveChangesAsync();
-        return dto;
+        var mappedResponse = mappedRequest.Adapt<CommentDTO>();
+        return mappedResponse;
     }
 
     public async Task<bool> DeleteCommentAsync(int id)
