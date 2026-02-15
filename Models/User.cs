@@ -25,6 +25,9 @@ public class User
     public bool IsActive { get; set; } = true;
         
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public string? otp { get; set; }
+    public bool? IsOtpVerified { get; set; }
         
     public DateTime?  UpdatedAt { get; set; }
         

@@ -40,6 +40,14 @@ namespace FinFlowAPI.DTO
         [Required]
         public string FullName { get; set; } = string. Empty;
         
-        public List<int> RoleIds { get; set; } = new();
+    }
+    public class VerifyOtpRequestDto
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        
+        [Required]
+        public string Otp { get; set; } = string.Empty;
     }
 }

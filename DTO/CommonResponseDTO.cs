@@ -1,5 +1,7 @@
+using System.Net;
+
 public class CommonResponseDTO
 {
-    public int code {get;set;}
+    public HttpStatusCode code {get;set;}
     public string message {get;set;}
 }

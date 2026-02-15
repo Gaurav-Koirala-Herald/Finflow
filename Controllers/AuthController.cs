@@ -3,6 +3,7 @@ using Microsoft. AspNetCore. Mvc;
 using System.Security.Claims;
 using FinFlowAPI.DTO;
 using FinFlowAPI.Services.Auth;
+using System.Net;
 
 namespace FinFlowAPI.Controllers
 {
@@ -28,17 +29,24 @@ namespace FinFlowAPI.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            var userId = int.Parse(User. FindFirst(ClaimTypes.NameIdentifier)?.Value ??  "0");
-            var result = await _authService.RegisterAsync(request, userId);
+            var result = await _authService.RegisterAsync(request);
             
-            if (result == null)
-                return BadRequest(new { message = "Username or email already exists" });
+            if (result.code == HttpStatusCode.BadRequest)
+                return BadRequest(new {  result.message });
 
             return Ok(result);
+        }
+        [HttpPost("verify-otp")]
+        public IActionResult VerifyOtp([FromBody] VerifyOtpRequestDto request)
+        {
+            var result = _authService.VerifyOtp(request.Email, request.Otp);
+            if (result.code == HttpStatusCode.OK)
+                return Ok(result);
+            else
+                return BadRequest(result);
         }
 
         [Authorize]
