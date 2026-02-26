@@ -65,6 +65,7 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAccountsService,AccountService>();
 builder.Services.AddScoped<IInteractionService, InteractionService>();
 builder.Services.AddScoped<IGoalService, GoalService>();
+builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<DataExportService>();
 builder.Services.AddScoped<CommonService>();
@@ -78,11 +79,10 @@ builder.Services.AddHttpClient("NepseApi", client =>
         AllowAutoRedirect = true,
         MaxAutomaticRedirections = 5
     });
-// Authorization handlers
+    builder.Services.AddHttpClient<EmailService>();
 builder. Services.AddScoped<IAuthorizationHandler, FunctionHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, PrivilegeHandler>();
 builder.Services.AddSingleton<SqlHandlerService>();
-// JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

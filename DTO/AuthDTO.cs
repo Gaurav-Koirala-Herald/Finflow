@@ -11,7 +11,7 @@ namespace FinFlowAPI.DTO
         public string Password { get; set; } = string.Empty;
     }
 
-    public class LoginResponseDto
+    public class LoginResponseDto : CommonResponseDTO
     {
         public int UserId { get; set; }
         public string Username { get; set; } = string.Empty;

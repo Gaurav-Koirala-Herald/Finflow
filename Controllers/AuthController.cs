@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft. AspNetCore. Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using FinFlowAPI.DTO;
 using FinFlowAPI.Services.Auth;
 using System.Net;
+using FinFlowAPI.Services;
 
 namespace FinFlowAPI.Controllers
 {
@@ -33,9 +34,9 @@ namespace FinFlowAPI.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
             var result = await _authService.RegisterAsync(request);
-            
+
             if (result.code == HttpStatusCode.BadRequest)
-                return BadRequest(new {  result.message });
+                return BadRequest(new { result.message });
 
             return Ok(result);
         }
@@ -49,17 +50,28 @@ namespace FinFlowAPI.Controllers
                 return BadRequest(result);
         }
 
+        [HttpPost("resend-otp")]
+        [AllowAnonymous]
+        public IActionResult ResendOtp(string email)
+        {
+            var result = _authService.ResendOtp(email);
+
+            if (result.code == HttpStatusCode.OK)
+                return Ok(result);
+
+            return BadRequest(result);
+        }
         [Authorize]
         [HttpGet("me")]
         public IActionResult GetCurrentUser()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.FindFirst(ClaimTypes. Name)?.Value;
-            var roles = User.FindAll(ClaimTypes. Role). Select(c => c.Value). ToList();
-            var functions = User.FindAll("function").Select(c => c.Value). ToList();
-            var privileges = User. FindAll("privilege"). Select(c => c.Value).ToList();
-            var status = User. FindAll("Status"). Select(c => c.Value).ToList();
-            
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+            var functions = User.FindAll("function").Select(c => c.Value).ToList();
+            var privileges = User.FindAll("privilege").Select(c => c.Value).ToList();
+            var status = User.FindAll("Status").Select(c => c.Value).ToList();
+
             return Ok(new
             {
                 userId,

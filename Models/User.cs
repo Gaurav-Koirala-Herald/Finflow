@@ -26,6 +26,8 @@ public class User
         
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime OtpCreatedDateTime { get; set; } = DateTime.UtcNow;
+
     public string? otp { get; set; }
     public bool? IsOtpVerified { get; set; }
         
