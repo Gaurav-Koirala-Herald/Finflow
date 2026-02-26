@@ -21,7 +21,7 @@ public class EmailService
         _apiKey = configuration["Resend:ApiKey"];
     }
 
-    public async Task<CommonResponseDTO> SendOtpEmail(string userEmail, string userName)
+    public async Task<CommonResponseDTO> SendOtpEmail(string userEmail)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
 
@@ -55,7 +55,7 @@ public class EmailService
     <tbody>
       <tr>
         <td style='padding:35px;'>
-          <h2 style='color:#111827; font-size:20px;'>Hello {userName},</h2>
+          <h2 style='color:#111827; font-size:20px;'>Hello {user.Username},</h2>
           <p style='color:#4b5563; font-size:16px; line-height:1.6;'>
             Use the OTP below to verify your FinFlow account. 
             This code is valid for <strong>5 minutes</strong>.

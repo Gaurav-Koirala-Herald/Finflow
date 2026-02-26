@@ -16,8 +16,7 @@ public class EmailController : ControllerBase
     public async Task<IActionResult> SendOtp([FromBody] OtpRequest request)
     {
         var result = await _emailService.SendOtpEmail(
-            request.Email,
-            request.UserName
+            request.Email
         );
 
         if (result.code != HttpStatusCode.OK)
@@ -30,5 +29,4 @@ public class EmailController : ControllerBase
 public class OtpRequest
 {
     public string Email { get; set; }
-    public string UserName { get; set; }
 }

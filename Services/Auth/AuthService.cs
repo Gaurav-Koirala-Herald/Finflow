@@ -34,7 +34,7 @@ namespace FinFlowAPI.Services.Auth
             if (user == null || !request.Password.Contains(user.PasswordHash))
                 return null;
 
-            var emailSentResponse = await _emailService.SendOtpEmail(user.Email, user.Username);
+            var emailSentResponse = await _emailService.SendOtpEmail(user.Email);
 
             if (emailSentResponse.code != HttpStatusCode.OK)
                 return null;
@@ -68,7 +68,7 @@ namespace FinFlowAPI.Services.Auth
             _context.Users.Add(user);
             var result = await _context.SaveChangesAsync();
 
-            var emailSentResponse = await _emailService.SendOtpEmail(request.Email, request.Username);
+            var emailSentResponse = await _emailService.SendOtpEmail(request.Email);
             if (emailSentResponse.code != HttpStatusCode.OK)
                 return new CommonResponseDTO { code = HttpStatusCode.InternalServerError, message = "Failed to send OTP email" };
             if (result > 0)
@@ -109,15 +109,9 @@ namespace FinFlowAPI.Services.Auth
 
         public CommonResponseDTO ResendOtp(string email)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Email == email && !u.IsOtpVerified.Value);
-            if (user != null)
-            {
-                var otp = _commonService.GenerateOTP();
-                user.otp = otp;
-                user.UpdatedAt = DateTime.UtcNow;
-                _context.SaveChanges();
+            var emailSend = _emailService.SendOtpEmail(email);
+            if (emailSend.Result.code == HttpStatusCode.OK)
                 return new CommonResponseDTO { code = HttpStatusCode.OK, message = "OTP resent successfully" };
-            }
             return new CommonResponseDTO { code = HttpStatusCode.BadRequest, message = "Email not found or already verified" };
         }
 
