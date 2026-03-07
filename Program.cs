@@ -1,9 +1,9 @@
-using System. Text;
+using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore. Authentication.JwtBearer;
-using Microsoft.AspNetCore. Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft. IdentityModel. Tokens;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using FinFlowAPI.API.Services;
 using FinFlowAPI.Data;
@@ -20,19 +20,20 @@ using FinFlowAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services. AddControllers()
+builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
             new JsonStringEnumConverter()
         );
     });
-builder. Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        In = ParameterLocation.Header, Description = "Please enter JWT with Bearer into field",
+        In = ParameterLocation.Header,
+        Description = "Please enter JWT with Bearer into field",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer"
@@ -52,23 +53,37 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // Database
-builder.Services. AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services. AddScoped<IRoleService, RoleService>();
-builder. Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<IAccountsService,AccountService>();
+builder.Services.AddScoped<IAccountsService, AccountService>();
 builder.Services.AddScoped<IInteractionService, InteractionService>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<DataExportService>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IWatchListService, WatchlistService>();
+builder.Services.AddScoped<IPortfolioService, PortfolioService>();
+builder.Services.AddScoped<StockRecommendationService>();
+builder.Services.AddScoped<RecommenderService>();
+builder.Services.AddScoped<StockCacheRefreshService>();
+
 builder.Services.AddScoped<CommonService>();
+builder.Services.AddHttpClient<GeminiService>();
+builder.Services.AddHttpClient<NepseApiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "NepseAI/1.0");
+});
 builder.Services.AddHttpClient("NepseApi", client =>
     {
         client.BaseAddress = new Uri("https://nepseapi.surajrimal.dev/");
@@ -79,10 +94,10 @@ builder.Services.AddHttpClient("NepseApi", client =>
         AllowAutoRedirect = true,
         MaxAutomaticRedirections = 5
     });
-    builder.Services.AddHttpClient<EmailService>();
-builder. Services.AddScoped<IAuthorizationHandler, FunctionHandler>();
+builder.Services.AddHttpClient<EmailService>();
+builder.Services.AddScoped<IAuthorizationHandler, FunctionHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, PrivilegeHandler>();
-builder.Services.AddSingleton<SqlHandlerService>();
+builder.Services.AddScoped<SqlHandlerService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -92,10 +107,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder. Configuration["Jwt:Issuer"],
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]! ))
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
     });
 
@@ -138,9 +153,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy. WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
               .AllowAnyHeader()
-              . AllowAnyMethod()
+              .AllowAnyMethod()
               .AllowCredentials();
     });
 });
@@ -148,7 +163,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment. IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

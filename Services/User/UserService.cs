@@ -2,6 +2,7 @@
 using FinFlowAPI.Data;
 using FinFlowAPI.DTO;
 using FinFlowAPI.Models;
+using Dapper;
 
 
 namespace FinFlowAPI.Services.User
@@ -9,10 +10,12 @@ namespace FinFlowAPI.Services.User
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _context;
+        private readonly SqlHandlerService _sqlHandler;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(ApplicationDbContext context, SqlHandlerService sqlHandler)
         {
             _context = context;
+            _sqlHandler = sqlHandler;
         }
 
         public async Task<List<UserDto>> GetAllUsersAsync()
@@ -197,6 +200,39 @@ namespace FinFlowAPI.Services.User
             await _context.SaveChangesAsync();
 
             return true;
+        }
+         public async Task<UserDto?> GetUserProfileAsync(int userId)
+        {
+            string sp = "sp_GetUserProfile";
+
+            var param = new DynamicParameters();
+            param.Add("@UserId", userId);
+
+            // sp_GetUserProfile returns 3 result sets
+            using var multi = await _sqlHandler.ExecuteMultipleAsync(sp, param);
+
+            var user = await multi.ReadFirstOrDefaultAsync<UserDto>();
+            if (user == null) return null;
+
+            user.PreferredSectors = (await multi.ReadAsync<string>()).ToList();
+            user.OwnedStocks      = (await multi.ReadAsync<string>()).ToList();
+
+            return user;
+        }
+         public async Task<CommonResponseDTO> UpdatePreferencesAsync(
+            UserPreferenceUpdateDTO dto, string userId)
+        {
+            string sp = "sp_UpdateUserPreferences";
+
+            var param = new DynamicParameters();
+            param.Add("@UserId",           userId);
+            param.Add("@RiskLevel",        dto.RiskLevel);
+            param.Add("@InvestmentAmount", dto.InvestmentAmount);
+            param.Add("@Sectors",          string.Join(",", dto.PreferredSectors));
+            param.Add("@OwnedStocks",      string.Join(",", dto.OwnedStocks));
+
+            var dbResp = await _sqlHandler.ExecuteAsync<CommonResponseDTO>(sp, param);
+            return dbResp;
         }
     }
 }

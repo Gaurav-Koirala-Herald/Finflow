@@ -13,10 +13,13 @@ namespace FinFlowAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-
-        public UsersController(IUserService userService)
+        private readonly IWatchListService _watchList;
+        private readonly IPortfolioService _portfolio;
+        public UsersController(IUserService userService, IWatchListService watchList, IPortfolioService portfolio)
         {
             _userService = userService;
+            _watchList = watchList;
+            _portfolio = portfolio;
         }
 
         [HttpGet]
@@ -97,5 +100,72 @@ namespace FinFlowAPI.Controllers
         }
         [HttpGet("get-user-details/{id}")]
         public async Task<IActionResult> GetUserDetails(int id) => Ok(await _userService.GetUserByIdAsync(id));
+
+                [HttpGet("{userId}/profile")]
+        public async Task<IActionResult> GetProfile(string userId)
+        {
+            var dbResp = await _userService.GetUserProfileAsync(Convert.ToInt32(userId));
+            if (dbResp == null) return NotFound();
+            return Ok(dbResp);
+        }
+
+        // PUT /api/users/{userId}/preferences
+        [HttpPut("{userId}/preferences")]
+        public async Task<IActionResult> UpdatePreferences(
+            string userId, [FromBody] UserPreferenceUpdateDTO dto)
+        {
+            var dbResp = await _userService.UpdatePreferencesAsync(dto, userId);
+            return Ok(dbResp);
+        }
+
+        // GET /api/users/{userId}/watchlist
+        [HttpGet("{userId}/watchlist")]
+        public async Task<IActionResult> GetWatchlist(string userId)
+        {
+            var dbResp = await _watchList.GetAsync(userId);
+            return Ok(dbResp);
+        }
+
+        // POST /api/users/{userId}/watchlist
+        [HttpPost("{userId}/watchlist")]
+        public async Task<IActionResult> AddToWatchlist(
+            string userId, [FromBody] AddWatchlistDTO dto)
+        {
+            var dbResp = await _watchList.AddAsync(dto, userId);
+            return Ok(dbResp);
+        }
+
+        // DELETE /api/users/{userId}/watchlist/{symbol}
+        [HttpDelete("{userId}/watchlist/{symbol}")]
+        public async Task<IActionResult> RemoveFromWatchlist(string userId, string symbol)
+        {
+            var dbResp = await _watchList.RemoveAsync(userId, symbol);
+            return Ok(dbResp);
+        }
+
+        // GET /api/users/{userId}/portfolio
+        [HttpGet("{userId}/portfolio")]
+        public async Task<IActionResult> GetPortfolio(string userId)
+        {
+            var dbResp = await _portfolio.GetAsync(userId);
+            return Ok(dbResp);
+        }
+
+        // POST /api/users/{userId}/portfolio
+        [HttpPost("{userId}/portfolio")]
+        public async Task<IActionResult> AddToPortfolio(
+            string userId, [FromBody] AddPortfolioDTO dto)
+        {
+            var dbResp = await _portfolio.AddAsync(dto, userId);
+            return Ok(dbResp);
+        }
+
+        // DELETE /api/users/{userId}/portfolio/{symbol}
+        [HttpDelete("{userId}/portfolio/{symbol}")]
+        public async Task<IActionResult> RemoveFromPortfolio(string userId, string symbol)
+        {
+            var dbResp = await _portfolio.RemoveAsync(userId, symbol);
+            return Ok(dbResp);
+        }
     }
 }

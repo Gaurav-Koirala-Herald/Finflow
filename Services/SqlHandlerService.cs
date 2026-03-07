@@ -58,5 +58,21 @@ namespace FinFlowAPI.Services
                 throw;
             }
         }
+         public async Task<SqlMapper.GridReader> ExecuteMultipleAsync(string proc, DynamicParameters param)
+        {
+            try
+            {
+                IDbConnection connection = new SqlConnection(GetConnectionString());
+                connection.Open();
+                return await connection.QueryMultipleAsync(
+                    proc, param,
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 120);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }

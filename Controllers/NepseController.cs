@@ -6,20 +6,20 @@ namespace FinFlowAPI.Controllers;
 [ApiController]
 [Authorize]
 [Route("api")]
-public class NepseController : ControllerBase
+public class NepseController(IConfiguration configuration) : ControllerBase
 {
     [HttpGet("TopLosers")]
     public async Task<IActionResult> GetTopLosers()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("http://localhost:8000/TopLosers");
+        var response = await client.GetStringAsync($"{configuration["NepseApi:BaseUrl"]}/TopLosers");
         return Content(response,"application/json");
     }
     [HttpGet("NepseIndex")]
     public async Task<IActionResult> GetNepseIndex()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("http://localhost:8000/NepseIndex");
+        var response = await client.GetStringAsync($"{configuration["NepseApi:BaseUrl"]}/NepseIndex");
         return Content(response,"application/json");
 
     }
@@ -27,7 +27,7 @@ public class NepseController : ControllerBase
     public async Task<IActionResult> GetTopGainers()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("http://localhost:8000/TopGainers");
+        var response = await client.GetStringAsync($"{configuration["NepseApi:BaseUrl"]}/TopGainers");
         return Content(response,"application/json");
 
     }
@@ -35,7 +35,7 @@ public class NepseController : ControllerBase
     public async Task<IActionResult> IsNepseOpen()
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync("http://localhost:8000/IsNepseOpen");
+        var response = await client.GetStringAsync($"{configuration["NepseApi:BaseUrl"]}/IsNepseOpen");
         return Content(response,"application/json");
 
     }

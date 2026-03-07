@@ -13,6 +13,9 @@ namespace FinFlowAPI.Services.User
         
         Task<List<FunctionDto>> GetFunctionsByUserIdAsync(int Id);
 
+        Task<CommonResponseDTO> UpdatePreferencesAsync(
+            UserPreferenceUpdateDTO dto, string userId);
+        Task<UserDto?> GetUserProfileAsync(int id);
         Task<bool> UpdateUserProfileAsync(UserDto userDto);
     }
 }
