@@ -7,14 +7,20 @@ public class RecommenderService
     private readonly IRecommendationService _rec;
     private readonly StockRecommendationService _engine;
     private readonly GeminiService _gemini;
+    private readonly StockCacheRefreshService _refreshService;
+    private readonly ILogger<RecommenderService> _logger;
 
     public RecommenderService(
+        StockCacheRefreshService refreshService,
+        ILogger<RecommenderService> logger,
         IUserService user,
         IStockService stock,
         IRecommendationService rec,
         StockRecommendationService engine,
         GeminiService gemini)
     {
+        _refreshService = refreshService;
+        _logger = logger;
         _user = user;
         _stock = stock;
         _rec = rec;
@@ -34,15 +40,44 @@ public class RecommenderService
 
         var user = await _user.GetUserProfileAsync(Convert.ToInt32(userId));
         if (user == null)
-            throw new Exception("User not found");
+            return new List<RecommendationDTO>();
 
         var stocks = await _stock.GetStocksForScoringAsync(userId);
         if (stocks == null || stocks.Count == 0)
-            throw new Exception("No stock data available. Run the cache refresh job first.");
+        {
+            _logger.LogWarning("Stock cache empty for user {UserId}. Attempting auto-refresh.", userId);
+
+            try
+            {
+                int refreshed = await _refreshService.RefreshAsync();
+                _logger.LogInformation("Auto-refreshed {Count} stocks.", refreshed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "NEPSE API unavailable. Seeding sample data.");
+                await _refreshService.SeedSampleDataAsync();
+            }
+
+            stocks = await _stock.GetStocksForScoringAsync(userId);
+
+            if (stocks == null || stocks.Count == 0)
+                return new List<RecommendationDTO>(); // Return empty rather than throw
+        }
 
         var picks = _engine.Score(user, stocks);
 
-        var explanations = await _gemini.GetExplanationsAsync(user, picks);
+        if (picks.Count == 0)
+            return new List<RecommendationDTO>();
+
+        Dictionary<string, string> explanations = new Dictionary<string, string>();
+        try
+        {
+            explanations = await _gemini.GetExplanationsAsync(user, picks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gemini API call failed. Proceeding without AI explanations.");
+        }
 
         await _rec.DeleteAllForUserAsync(userId);
 

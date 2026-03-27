@@ -34,9 +34,11 @@ public class User
     public DateTime? UpdatedAt { get; set; }
 
     public List<Goal> Goals { get; set; } = new();
-    public  string RiskLevel { get; set; } 
-    public List<string> PreferredSectors { get; set; } = new();
-    public List<string> OwnedStocks { get; set; } = new();
+    public  string? RiskLevel { get; set; } 
+    [NotMapped]
+    public List<string>? PreferredSectors { get; set; } = new();
+    [NotMapped]
+    public List<string>? OwnedStocks { get; set; } = new();
     public decimal InvestmentAmount { get; set; }
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();

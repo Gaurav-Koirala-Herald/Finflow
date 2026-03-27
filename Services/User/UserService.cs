@@ -45,8 +45,8 @@ namespace FinFlowAPI.Services.User
         {
             var users = await _context.Users.ToListAsync();
             var user = await _context.Users
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur. Role)
+                // .Include(u => u.UserRoles)
+                    // .ThenInclude(ur => ur. Role)
                 . FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null) return null;
