@@ -162,14 +162,14 @@ public class NepseStatus
 
 public class NepseSummary
 {
-    [JsonPropertyName("totalTurnover")]
+    [JsonPropertyName("Total Turnover Rs:")]
     public decimal TotalTurnover { get; set; }
 
-    [JsonPropertyName("totalTransactions")]
-    public int TotalTransactions { get; set; }
+    [JsonPropertyName("Total Transactions")]
+    public double TotalTransactions { get; set; }
 
-    [JsonPropertyName("advancingCount")]
-    public int AdvancingCount { get; set; }
+    [JsonPropertyName("Total Traded Shares")]
+    public double TotalTradedShares { get; set; }
 
     [JsonPropertyName("decliningCount")]
     public int DecliningCount { get; set; }

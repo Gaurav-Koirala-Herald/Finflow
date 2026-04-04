@@ -43,7 +43,7 @@ namespace FinFlowAPI.Services.User
 
         public async Task<UserDto?> GetUserByIdAsync(int id)
         {
-            var users = await _context.Users.ToListAsync();
+            // var users = await _context.Users.ToListAsync();
             var user = await _context.Users
                 // .Include(u => u.UserRoles)
                     // .ThenInclude(ur => ur. Role)
