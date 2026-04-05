@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FinFlowAPI.DTO;
 
 public class GeminiService
@@ -24,8 +26,10 @@ public class GeminiService
             $"| P/E: {p.Stock.PeRatio} " +
             $"| AI Score: {p.Score:P0}");
 
-        string prompt = $@"
-You are a NEPSE (Nepal Stock Exchange) investment advisor.
+        int estimatedTokens = Math.Max(1024, picks.Count * 200 + 512);
+        int maxTokens = Math.Min(estimatedTokens, 8192);
+
+        string prompt = $@"You are a NEPSE (Nepal Stock Exchange) investment advisor.
 
 INVESTOR PROFILE:
 - Risk Tolerance: {user.RiskLevel}
@@ -35,27 +39,26 @@ INVESTOR PROFILE:
 RECOMMENDED STOCKS:
 {string.Join("\n", stockLines)}
 
-For EACH stock write 2-3 sentences:
+For EACH stock write 2-3 sentences covering:
 1. Why it fits this investor's profile
-2. Key fundamental or technical reason to consider it
-3. One specific risk to watch out for
+2. Key fundamental or technical reason
+3. One specific risk to watch
 
-End with a brief general risk disclaimer.
-
-Respond ONLY as a JSON array. No markdown, no extra text. Example:
-[{{ ""symbol"": ""NICA"", ""explanation"": ""..."" }}]
-";
+Respond ONLY as a valid JSON array. No markdown, no code fences, no extra text.
+Use this exact format:
+[{{""symbol"":""NICA"",""explanation"":""Your explanation here.""}}]";
 
         var requestBody = new
         {
             contents = new[]
             {
-                    new { parts = new[] { new { text = prompt } } }
-                },
+                new { parts = new[] { new { text = prompt } } }
+            },
             generationConfig = new
             {
-                temperature = 0.7,
-                maxOutputTokens = 2048
+                temperature = 0.4,           
+                maxOutputTokens = maxTokens,
+                responseMimeType = "application/json"  // Force JSON mode on Gemini
             }
         };
 
@@ -65,47 +68,104 @@ Respond ONLY as a JSON array. No markdown, no extra text. Example:
 
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadFromJsonAsync<GeminiResponse>();
-        string text = json?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? "[]";
+        var geminiResponse = await response.Content.ReadFromJsonAsync<GeminiResponse>();
+        string rawText = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? "[]";
 
-        return ParseExplanations(text);
+        return ParseExplanations(rawText);
     }
 
-    private static Dictionary<string, string> ParseExplanations(string json)
+    private static Dictionary<string, string> ParseExplanations(string raw)
     {
         try
         {
-            json = json.Trim().TrimStart('`');
-            if (json.StartsWith("json")) json = json[4..];
-            json = json.TrimEnd('`').Trim();
+            string json = CleanJson(raw);
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var items = JsonSerializer.Deserialize<List<GeminiExplanationItem>>(json, options);
 
-            return items?.ToDictionary(i => i.Symbol, i => i.Explanation)
+            try
+            {
+                var items = JsonSerializer.Deserialize<List<GeminiExplanationItem>>(json, options);
+                if (items != null && items.Count > 0)
+                    return items.ToDictionary(i => i.Symbol, i => i.Explanation);
+            }
+            catch (JsonException) { }
+
+            string repaired = RepairTruncatedJson(json);
+            var repairedItems = JsonSerializer.Deserialize<List<GeminiExplanationItem>>(repaired, options);
+
+            return repairedItems?.ToDictionary(i => i.Symbol, i => i.Explanation)
                    ?? new Dictionary<string, string>();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[GeminiService] JSON parse failed: {ex.Message}");
             return new Dictionary<string, string>();
         }
+    }
+
+    private static string CleanJson(string raw)
+    {
+        raw = Regex.Replace(raw, @"```(?:json)?", "", RegexOptions.IgnoreCase).Trim();
+
+        var match = Regex.Match(raw, @"\[.*\]", RegexOptions.Singleline);
+        if (match.Success)
+            return match.Value;
+
+        var objMatch = Regex.Match(raw, @"\{.*\}", RegexOptions.Singleline);
+        if (objMatch.Success)
+            return $"[{objMatch.Value}]";
+
+        return raw;
+    }
+
+    private static string RepairTruncatedJson(string json)
+    {
+        var sb = new StringBuilder(json.TrimEnd());
+
+        int quoteCount = json.Count(c => c == '"');
+        if (quoteCount % 2 != 0)
+            sb.Append('"');
+
+        var stack = new Stack<char>();
+        bool inString = false;
+
+        for (int i = 0; i < json.Length; i++)
+        {
+            char c = json[i];
+            if (c == '"' && (i == 0 || json[i - 1] != '\\'))
+                inString = !inString;
+
+            if (!inString)
+            {
+                if (c == '{') stack.Push('}');
+                else if (c == '[') stack.Push(']');
+                else if ((c == '}' || c == ']') && stack.Count > 0)
+                    stack.Pop();
+            }
+        }
+
+        while (stack.Count > 0)
+            sb.Append(stack.Pop());
+
+        return sb.ToString();
     }
 }
 
 // Gemini API response models
 public class GeminiResponse
 {
-    public List<GeminiCandidate> Candidates { get; set; } = new List<GeminiCandidate>();
+    public List<GeminiCandidate> Candidates { get; set; } = new();
 }
 
 public class GeminiCandidate
 {
-    public GeminiContent Content { get; set; } = new GeminiContent();
+    public GeminiContent Content { get; set; } = new();
+    public string? FinishReason { get; set; }  // "STOP", "MAX_TOKENS", etc.
 }
 
 public class GeminiContent
 {
-    public List<GeminiPart> Parts { get; set; } = new List<GeminiPart>();
+    public List<GeminiPart> Parts { get; set; } = new();
 }
 
 public class GeminiPart

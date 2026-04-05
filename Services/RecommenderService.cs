@@ -61,7 +61,7 @@ public class RecommenderService
             stocks = await _stock.GetStocksForScoringAsync(userId);
 
             if (stocks == null || stocks.Count == 0)
-                return new List<RecommendationDTO>(); // Return empty rather than throw
+                return new List<RecommendationDTO>(); 
         }
 
         var picks = _engine.Score(user, stocks);
