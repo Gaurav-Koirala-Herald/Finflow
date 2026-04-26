@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 public class StockCacheRefreshService
 {
     private readonly IStockService _stock;
@@ -23,115 +25,98 @@ public class StockCacheRefreshService
 
         try
         {
-            liveMarket = await _nepse.GetLiveMarketAsync();
-            securities = await _nepse.GetSecurityListAsync();
+            // 🔹 Fetch both in parallel
+            var liveTask = _nepse.GetLiveMarketAsync();
+            var secTask = _nepse.GetSecurityListAsync();
+
+            await Task.WhenAll(liveTask, secTask);
+
+            liveMarket = liveTask.Result;
+            securities = secTask.Result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch data from NEPSE API.");
-            throw new Exception("NEPSE API is unreachable. Please try again later.", ex);
+            _logger.LogError(ex, "Failed to fetch NEPSE data.");
+            throw;
         }
 
         if (liveMarket == null || liveMarket.Count == 0)
-            throw new Exception("NEPSE API returned no live market data.");
+            throw new Exception("No live market data.");
 
         var sectorMap = securities
-                .Where(s => !string.IsNullOrWhiteSpace(s.Symbol))
-                .GroupBy(s => s.Symbol.Trim().ToUpper())
-                .ToDictionary(
-                    g => g.Key,
-                    g => NormalizeSector(g.First().SectorName));
-
-        var priceChange30dMap = new Dictionary<string, decimal>();
-        var batches = liveMarket
             .Where(s => !string.IsNullOrWhiteSpace(s.Symbol))
-            .Select(s => s.Symbol)
-            .Chunk(10);
+            .GroupBy(s => s.Symbol.Trim().ToUpper())
+            .ToDictionary(
+                g => g.Key,
+                g => NormalizeSector(g.First().SectorName)
+            );
 
-        foreach (var batch in batches)
-        {
-            var tasks = batch.Select(async symbol =>
+        var priceChange30dMap = new ConcurrentDictionary<string, decimal>();
+
+        var semaphore = new SemaphoreSlim(5);
+
+        var historyTasks = liveMarket
+            .Where(s => !string.IsNullOrWhiteSpace(s.Symbol))
+            .Select(async stock =>
             {
+                await semaphore.WaitAsync();
                 try
                 {
-                    var history = await _nepse.GetDailyPriceGraphAsync(symbol);
+                    var history = await _nepse.GetDailyPriceGraphAsync(stock.Symbol);
+
                     if (history != null && history.Count >= 2)
                     {
-                        var sorted = history.OrderBy(h => h.Date).ToList();
-                        decimal old = sorted.First().ClosePrice;
-                        decimal cur = sorted.Last().ClosePrice;
-                        if (old > 0)
-                            return (symbol, change: ((cur - old) / old) * 100m);
+                        var ordered = history.OrderBy(h => h.Date).ToList();
+                        decimal oldPrice = ordered.First().ClosePrice;
+                        decimal newPrice = ordered.Last().ClosePrice;
+
+                        if (oldPrice > 0)
+                        {
+                            decimal change = ((newPrice - oldPrice) / oldPrice) * 100m;
+                            priceChange30dMap[stock.Symbol] = change;
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogDebug(ex, "No price history for {Symbol}", symbol);
+                    _logger.LogDebug(ex, "History fetch failed for {Symbol}", stock.Symbol);
+                    priceChange30dMap[stock.Symbol] = 0m;
                 }
-                return (symbol, change: 0m);
+                finally
+                {
+                    semaphore.Release();
+                }
             });
 
-            var results = await Task.WhenAll(tasks);
-            foreach (var (sym, chg) in results)
-                priceChange30dMap[sym] = chg;
-
-            await Task.Delay(200);
-        }
-        int count = 0;
-
-        foreach (var stock in liveMarket)
+        await Task.WhenAll(historyTasks);
+        var stockCacheList = liveMarket.Select(stock =>
         {
-            decimal change30d = 0;
-            try
+            return new StockCache
             {
-                var history = await _nepse.GetDailyPriceGraphAsync(stock.Symbol);
-                if (history != null && history.Count >= 2)
-                {
-                    decimal oldest = history.OrderBy(h => h.Date).First().ClosePrice;
-                    if (oldest > 0)
-                        change30d = ((stock.Ltp - oldest) / oldest) * 100;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not fetch price history for {Symbol}", stock.Symbol);
-            }
+                Symbol = stock.Symbol,
+                SecurityName = stock.SecurityName,
+                Sector = sectorMap.GetValueOrDefault(stock.Symbol, "Other"),
+                CurrentPrice = stock.Ltp,
+                Ltp = stock.Ltp,
+                PointChange = stock.PointChange,
+                PercentageChange = stock.PercentageChange,
+                PriceChange30d = priceChange30dMap.GetValueOrDefault(stock.Symbol, 0m),
+                Volume = stock.TotalTradeQuantity,
+                High52week = stock.HighPrice,
+                Low52week = stock.LowPrice,
+                PeRatio = 0,
+                Eps = 0,
+                BookValue = 0,
+                LastUpdated = DateTime.UtcNow
+            };
+        }).ToList();
 
-            try
-            {
-                var stockCache = new StockCache
-                {
-                    Symbol = stock.Symbol,
-                    SecurityName = stock.SecurityName,
-                    Sector = sectorMap.GetValueOrDefault(stock.Symbol, "Other"),
-                    CurrentPrice = stock.Ltp,
-                    Ltp = stock.Ltp,
-                    // PointChange is computed: lastTradedPrice - previousClose
-                    PointChange = stock.PointChange,
-                    PercentageChange = stock.PercentageChange,
-                    PriceChange30d = priceChange30dMap.GetValueOrDefault(stock.Symbol, 0m),
-                    Volume = stock.TotalTradeQuantity,
-                    // API returns today's high/low; used as proxy until 52w data available
-                    High52week = stock.HighPrice,
-                    Low52week = stock.LowPrice,
-                    // PE, EPS, BookValue not in LiveMarket — leave 0; scoring handles gracefully
-                    PeRatio = 0,
-                    Eps = 0,
-                    BookValue = 0,
-                    LastUpdated = DateTime.UtcNow
-                };
+    
+        int affected = await _stock.BulkUpsertAsync(stockCacheList);
 
-                await _stock.UpsertStockAsync(stockCache);
-                count++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to upsert stock {Symbol}", stock.Symbol);
-            }
-        }
+        _logger.LogInformation("Stock cache refresh complete. {Count} stocks updated.", affected);
 
-        _logger.LogInformation("Stock cache refresh complete. {Count} stocks updated.", count);
-        return count;
+        return affected;
     }
     public async Task SeedRealDataAsync()
     {

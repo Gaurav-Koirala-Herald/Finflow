@@ -208,7 +208,6 @@ namespace FinFlowAPI.Services.User
             var param = new DynamicParameters();
             param.Add("@UserId", userId);
 
-            // sp_GetUserProfile returns 3 result sets
             using var multi = await _sqlHandler.ExecuteMultipleAsync(sp, param);
 
             var user = await multi.ReadFirstOrDefaultAsync<UserDto>();

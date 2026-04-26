@@ -3,48 +3,142 @@ using FinFlowAPI.DTO;
 public class StockRecommendationService
 {
     public List<(StockCache Stock, decimal Score, ScoreBreakdown Breakdown)> Score(
-        UserDto user, List<StockCache> stocks)
+    UserDto user, List<StockCache> stocks)
+{
+    if (stocks == null || stocks.Count == 0)
+        return new();
+
+    var rnd = new Random();
+
+    var preferredSectors = new HashSet<string>(
+        user.PreferredSectors ?? new List<string>(),
+        StringComparer.OrdinalIgnoreCase);
+
+    if (preferredSectors.Any())
     {
-        var preferredSectors = new HashSet<string>(
-            user.PreferredSectors, StringComparer.OrdinalIgnoreCase);
+        var filtered = stocks
+            .Where(s => preferredSectors.Contains(s.Sector))
+            .ToList();
 
-        decimal maxVolume = stocks.Max(s => (decimal)s.Volume);
-        decimal minVolume = stocks.Min(s => (decimal)s.Volume);
-        decimal maxChange = stocks.Max(s => s.PriceChange30d);
-        decimal minChange = stocks.Min(s => s.PriceChange30d);
+        if (filtered.Count > 0)
+            stocks = filtered; 
+    }
 
-        var results = new List<(StockCache, decimal, ScoreBreakdown)>();
+    bool useFinancials = user.TotalIncome > 0 && user.TotalExpense > 0;
 
-        foreach (var stock in stocks)
+    decimal disposableIncome = user.TotalIncome - user.TotalExpense;
+    decimal investableAmount = disposableIncome > 0 ? disposableIncome * 0.3m : 0;
+
+    if (useFinancials && investableAmount > 0)
+    {
+        var filtered = stocks
+            .Where(s => s.CurrentPrice <= investableAmount * 2) 
+            .ToList();
+
+        if (filtered.Count > 0)
+            stocks = filtered;
+    }
+
+   
+    decimal maxVolume = stocks.Max(s => (decimal)s.Volume);
+    decimal minVolume = stocks.Min(s => (decimal)s.Volume);
+    decimal maxChange = stocks.Max(s => s.PriceChange30d);
+    decimal minChange = stocks.Min(s => s.PriceChange30d);
+
+
+    decimal trendW, fundW, sectorW, riskW, volumeW, affordabilityW;
+
+    switch (user.RiskLevel)
+    {
+        case "Low":
+            trendW = 0.15m;
+            fundW = 0.30m;
+            sectorW = 0.20m;
+            riskW = 0.20m;
+            volumeW = 0.05m;
+            affordabilityW = 0.10m;
+            break;
+
+        case "High":
+            trendW = 0.40m;
+            fundW = 0.10m;
+            sectorW = 0.15m;
+            riskW = 0.20m;
+            volumeW = 0.10m;
+            affordabilityW = 0.05m;
+            break;
+
+        default: // Medium
+            trendW = 0.30m;
+            fundW = 0.20m;
+            sectorW = 0.20m;
+            riskW = 0.15m;
+            volumeW = 0.10m;
+            affordabilityW = 0.05m;
+            break;
+    }
+
+    var results = new List<(StockCache, decimal, ScoreBreakdown)>();
+
+    foreach (var stock in stocks)
+    {
+        if (stock.CurrentPrice <= 0) continue;
+
+        decimal affordabilityScore = 0.5m;
+
+        if (useFinancials && investableAmount > 0)
         {
-            if (stock.CurrentPrice <= 0) continue;
-
-            var breakdown = new ScoreBreakdown
-            {
-                TrendScore = Normalize(stock.PriceChange30d, minChange, maxChange),
-                FundamentalsScore = stock.PeRatio > 0
-                                        ? Normalize(1m / stock.PeRatio, 0m, 0.15m)
-                                        : 0.5m,
-                SectorScore = preferredSectors.Contains(stock.Sector) ? 1.0m : 0.3m,
-                RiskScore = MatchRisk(user.RiskLevel, stock),
-                PopularityScore = Normalize((decimal)stock.Volume, minVolume, maxVolume)
-            };
-
-            decimal score = Clamp(
-                (0.30m * breakdown.TrendScore) +
-                (0.25m * breakdown.FundamentalsScore) +
-                (0.20m * breakdown.SectorScore) +
-                (0.15m * breakdown.RiskScore) +
-                (0.10m * breakdown.PopularityScore));
-
-            results.Add((stock, score, breakdown));
+            affordabilityScore = stock.CurrentPrice <= investableAmount
+                ? 1.0m
+                : Clamp(investableAmount / stock.CurrentPrice);
         }
 
-        return results
-            .OrderByDescending(r => r.Item2)
-            .Take(5)
-            .ToList();
+        decimal volatility = Math.Abs(stock.PercentageChange);
+
+        decimal riskScore = user.RiskLevel switch
+        {
+            "Low" => volatility < 2 ? 1.0m : 0.3m,
+            "Medium" => volatility < 5 ? 1.0m : 0.6m,
+            "High" => volatility >= 5 ? 1.0m : 0.5m,
+            _ => 0.5m
+        };
+
+        var breakdown = new ScoreBreakdown
+        {
+            TrendScore = Normalize(stock.PriceChange30d, minChange, maxChange),
+            FundamentalsScore = stock.PeRatio > 0
+                ? Normalize(1m / stock.PeRatio, 0m, 0.15m)
+                : 0.5m,
+            SectorScore = preferredSectors.Contains(stock.Sector) ? 1.0m : 0.5m,
+            RiskScore = riskScore,
+            PopularityScore = Normalize((decimal)stock.Volume, minVolume, maxVolume),
+            AffordabilityScore = affordabilityScore
+        };
+
+        decimal score = Clamp(
+            (trendW * breakdown.TrendScore) +
+            (fundW * breakdown.FundamentalsScore) +
+            (sectorW * breakdown.SectorScore) +
+            (riskW * breakdown.RiskScore) +
+            (volumeW * breakdown.PopularityScore) +
+            (affordabilityW * breakdown.AffordabilityScore)
+        );
+
+        score += (decimal)rnd.NextDouble() * 0.03m;
+
+        results.Add((stock, score, breakdown));
     }
+
+    var diversified = results
+        .OrderByDescending(r => r.Item2)
+        .GroupBy(r => r.Item1.Sector)
+        .SelectMany(g => g.Take(2)) 
+        .OrderByDescending(r => r.Item2)
+        .Take(5)
+        .ToList();
+
+    return diversified;
+}
 
     private static decimal Normalize(decimal value, decimal min, decimal max)
     {

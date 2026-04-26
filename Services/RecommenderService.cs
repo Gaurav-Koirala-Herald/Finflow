@@ -42,6 +42,7 @@ public class RecommenderService
         if (user == null)
             return new List<RecommendationDTO>();
 
+        var preferredSectors = user.PreferredSectors;
         var stocks = await _stock.GetStocksForScoringAsync(userId);
         if (stocks == null || stocks.Count == 0)
         {

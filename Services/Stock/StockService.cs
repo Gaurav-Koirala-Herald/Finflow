@@ -45,5 +45,11 @@ public class StockService : IStockService
         var dbResp = await _handler.ExecuteAsync<CommonResponseDTO>(sp, param);
         return dbResp;
     }
+    public async Task<int> BulkUpsertAsync(List<StockCache> stocks)
+    {
+        var tasks = stocks.Select(s=>UpsertStockAsync(s));
+        await Task.WhenAll(tasks);
+        return stocks.Count;
+    }
 }
 

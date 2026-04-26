@@ -7,6 +7,8 @@
         public string Email { get; set; } = string. Empty;
         public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public decimal TotalIncome {get;set;}
+        public  decimal TotalExpense {get;set;}
         public DateTime CreatedAt { get; set; }
          public string RiskLevel { get; set; } = string.Empty;
         public List<string> PreferredSectors { get; set; } = new List<string>();

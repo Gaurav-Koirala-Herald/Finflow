@@ -147,7 +147,7 @@ builder.Services.AddAuthorization(options =>
             policy.Requirements.Add(new PrivilegeRequirement(code)));
     }
 });
-
+builder.Services.AddHostedService<StockRefreshBackgroundService>();
 // CORS
 builder.Services.AddCors(options =>
 {
